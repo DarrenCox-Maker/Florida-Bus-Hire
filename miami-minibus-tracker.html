@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Miami Minibus Price Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0a0e14;
+    --surface: #111720;
+    --surface2: #1a2232;
+    --border: #1f2d42;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --green: #00ff9d;
+    --text: #e8edf5;
+    --muted: #5a7090;
+    --danger: #ff4057;
+    --yellow: #ffd166;
+    --purple: #b48eff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    padding: 36px 0 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .logo-area h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.1rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .logo-area h1 span { color: var(--accent); }
+
+  .logo-area p {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+  }
+  .status-dot.live      { background: var(--green);  box-shadow: 0 0 8px var(--green);  animation: pulse 2s ease infinite; }
+  .status-dot.timer-on  { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); animation: pulse 3s ease infinite; }
+
+  @keyframes pulse   { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  @keyframes spin    { to { transform: rotate(360deg); } }
+  @keyframes slideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+
+  /* ── BOOKING SUMMARY BANNER ── */
+  .booking-banner {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  @media(max-width:640px){ .booking-banner{ grid-template-columns: 1fr 1fr; } }
+
+  .bk-cell {
+    background: var(--surface);
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .bk-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .bk-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  .bk-value.accent  { color: var(--accent); }
+  .bk-value.green   { color: var(--green); }
+  .bk-value.yellow  { color: var(--yellow); }
+  .bk-value.purple  { color: var(--purple); }
+
+  .bk-sub {
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  /* ── PANELS ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+  }
+
+  .panel-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+    font-weight: 500;
+  }
+
+  /* ── LOCATION AREA ── */
+  .location-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  @media(max-width:680px){ .location-grid{ grid-template-columns: 1fr; } }
+
+  .field-group label {
+    display: block;
+    font-size: 0.67rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 7px;
+  }
+
+  .field-group input, .field-group select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.83rem;
+    padding: 10px 14px;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field-group input:focus, .field-group select:focus { border-color: var(--accent); }
+  .field-group select option { background: var(--surface); }
+
+  .field-group input[readonly] {
+    background: rgba(0,212,255,0.04);
+    border-color: rgba(0,212,255,0.3);
+    color: var(--accent);
+    cursor: default;
+  }
+
+  .field-locked-note {
+    font-size: 0.62rem;
+    color: var(--muted);
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  /* ── PICKUP LOCATIONS ── */
+  .pickup-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--purple);
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+
+  .pickup-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .pickup-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.74rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .pickup-chip .chip-icon { font-size: 1rem; flex-shrink: 0; }
+  .pickup-chip .chip-info { flex: 1; }
+  .pickup-chip .chip-name { color: var(--text); font-size: 0.76rem; line-height: 1.3; }
+  .pickup-chip .chip-dist { font-size: 0.62rem; color: var(--muted); margin-top: 2px; }
+  .pickup-chip .chip-check { font-size: 0.65rem; color: var(--purple); opacity: 0; }
+
+  .pickup-chip.selected {
+    border-color: var(--purple);
+    background: rgba(180,142,255,0.06);
+  }
+  .pickup-chip.selected .chip-check { opacity: 1; }
+  .pickup-chip.selected .chip-name { color: var(--purple); }
+  .pickup-chip:hover:not(.selected) { border-color: var(--muted); }
+
+  /* ── VEHICLE / DURATION ── */
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  @media(max-width:480px){ .options-grid{ grid-template-columns: 1fr; } }
+
+  /* ── BUTTONS ── */
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    border-radius: 8px;
+    padding: 11px 22px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.84rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #00eaff; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  .btn-timer { background: var(--surface2); color: var(--yellow); border: 1px solid rgba(255,209,102,0.35); }
+  .btn-timer:hover { background: rgba(255,209,102,0.07); }
+  .btn-timer.active { background: rgba(255,209,102,0.12); border-color: var(--yellow); }
+
+  .btn-stop { background: var(--surface2); color: var(--danger); border: 1px solid rgba(255,64,87,0.35); }
+  .btn-stop:hover { background: rgba(255,64,87,0.07); }
+
+  .spinner {
+    width: 15px; height: 15px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  .btn-primary.loading .spinner { display: block; }
+  .btn-primary.loading .btn-label { display: none; }
+
+  /* ── TIMER STRIP ── */
+  .timer-strip {
+    display: none;
+    align-items: center;
+    gap: 16px;
+    background: rgba(255,209,102,0.04);
+    border: 1px solid rgba(255,209,102,0.2);
+    border-radius: 10px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    animation: fadeIn 0.3s ease;
+    flex-wrap: wrap;
+  }
+
+  .timer-strip.visible { display: flex; }
+  .timer-icon { font-size: 1.3rem; }
+  .timer-info { flex: 1; min-width: 180px; }
+  .timer-info .tl { font-size: 0.63rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--yellow); margin-bottom: 4px; }
+  .timer-info .td { font-size: 0.78rem; color: var(--text); }
+
+  .countdown-ring { position: relative; width: 54px; height: 54px; flex-shrink: 0; }
+  .countdown-ring svg { transform: rotate(-90deg); }
+  .countdown-ring circle { fill: none; stroke-width: 3.5; }
+  .countdown-ring .track { stroke: var(--border); }
+  .countdown-ring .progress { stroke: var(--yellow); stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+  .countdown-ring .num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 0.66rem; font-weight: 700; color: var(--yellow); }
+
+  /* ── EMAIL ALERTS ── */
+  .email-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+
+  .email-toggle .toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .toggle-switch {
+    width: 42px; height: 24px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    position: relative;
+    transition: all 0.2s;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 4px; left: 4px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: transform 0.2s, background 0.2s;
+  }
+
+  .toggle-switch.on { background: rgba(0,212,255,0.15); border-color: var(--accent); }
+  .toggle-switch.on::after { transform: translateX(18px); background: var(--accent); }
+
+  .email-body {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    transition: max-height 0.4s ease, opacity 0.3s ease, margin-top 0.3s ease;
+  }
+
+  .email-body.open { max-height: 520px; opacity: 1; margin-top: 22px; }
+
+  .email-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+  @media(max-width:580px){ .email-grid{ grid-template-columns: 1fr; } }
+
+  .cond-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  @media(max-width:560px){ .cond-grid{ grid-template-columns: 1fr; } }
+
+  .alert-condition {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.74rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .alert-condition input[type=checkbox] { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; flex-shrink: 0; }
+  .alert-condition.checked { border-color: var(--accent); color: var(--text); background: rgba(0,212,255,0.04); }
+
+  .threshold-row {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.74rem;
+    color: var(--muted);
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .threshold-row input[type=number] {
+    width: 88px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    padding: 7px 10px;
+    border-radius: 6px;
+    outline: none;
+  }
+
+  .threshold-row input:focus { border-color: var(--accent); }
+
+  .email-note {
+    font-size: 0.67rem;
+    color: var(--muted);
+    line-height: 1.78;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-top: 6px;
+  }
+
+  .mailto-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent2);
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    padding: 9px 18px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    margin-top: 14px;
+    transition: all 0.2s;
+  }
+
+  .mailto-btn:hover { background: #ff8555; transform: translateY(-1px); }
+
+  /* ── DAILY SUMMARY ── */
+  .daily-countdown-strip {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: rgba(0,255,157,0.04);
+    border: 1px solid rgba(0,255,157,0.18);
+    border-radius: 10px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .daily-ring-prog { stroke: var(--green) !important; }
+  #dailyRingNum { color: var(--green); }
+  #previewModal.open { display: flex !important; }
+
+  /* ── RESULTS ── */
+  .results-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    display: none;
+  }
+
+  .results-panel.visible { display: block; }
+
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 24px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .results-title { font-family: 'Syne', sans-serif; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .timestamp { font-size: 0.66rem; color: var(--muted); }
+
+  .stream-area {
+    padding: 16px 24px;
+    min-height: 72px;
+    font-size: 0.74rem;
+    line-height: 1.95;
+    color: var(--muted);
+    display: none;
+    border-bottom: 1px solid var(--border);
+    white-space: pre-wrap;
+  }
+
+  .stream-area.visible { display: block; }
+
+  .thinking-label {
+    color: var(--accent2);
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .thinking-label::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent2);
+    animation: pulse 1s ease infinite;
+  }
+
+  .price-results { padding: 18px 24px; }
+
+  /* ── PRICE CARDS ── */
+  .price-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: center;
+    transition: border-color 0.2s;
+    animation: slideIn 0.3s ease;
+  }
+
+  @media(max-width:540px){ .price-card{ grid-template-columns: 1fr; } .price-area{ text-align:left; } }
+
+  .price-card:hover { border-color: var(--accent); }
+  .price-card.best-deal { border-color: var(--green); }
+  .price-card.location-match { border-left: 3px solid var(--purple); }
+
+  .provider-logo {
+    width: 42px; height: 42px;
+    border-radius: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .provider-info h3 { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.88rem; margin-bottom: 4px; }
+  .provider-info .details { font-size: 0.68rem; color: var(--muted); line-height: 1.55; }
+  .provider-info .tags { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+
+  .tag { font-size: 0.57rem; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.05em; text-transform: uppercase; background: var(--bg); border: 1px solid var(--border); color: var(--muted); }
+  .tag.green  { border-color: var(--green);  color: var(--green);  background: rgba(0,255,157,0.05); }
+  .tag.blue   { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.05); }
+  .tag.orange { border-color: var(--accent2);color: var(--accent2);background: rgba(255,107,53,0.05);}
+  .tag.purple { border-color: var(--purple); color: var(--purple); background: rgba(180,142,255,0.05);}
+
+  .price-area { text-align: right; flex-shrink: 0; }
+  .price-area .price { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+  .price-area .price.best { color: var(--green); }
+  .price-area .per { font-size: 0.63rem; color: var(--muted); margin-top: 2px; }
+  .best-badge { display: inline-block; background: var(--green); color: #000; font-size: 0.56rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+
+  .summary-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-top: 14px;
+    font-size: 0.75rem;
+    line-height: 1.88;
+    color: var(--text);
+  }
+
+  .summary-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 8px; font-weight: 500; }
+
+  /* ── TOAST ── */
+  .alert-toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--green);
+    border-radius: 12px;
+    padding: 16px 20px;
+    max-width: 340px;
+    z-index: 999;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    display: none;
+    animation: slideIn 0.4s ease;
+  }
+
+  .alert-toast.visible { display: block; }
+  .alert-toast .t-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.83rem; color: var(--green); margin-bottom: 6px; }
+  .alert-toast .t-body { font-size: 0.71rem; color: var(--muted); line-height: 1.65; }
+  .alert-toast .t-close { position: absolute; top: 10px; right: 14px; cursor: pointer; color: var(--muted); font-size: 1rem; line-height: 1; }
+
+  /* ── HISTORY ── */
+  .history-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+
+  .history-entry {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.7rem;
+  }
+
+  .history-entry:last-child { border-bottom: none; }
+  .history-time { color: var(--muted); font-size: 0.62rem; white-space: nowrap; min-width: 80px; }
+  .history-type { font-size: 0.58rem; padding: 2px 7px; border-radius: 4px; border: 1px solid var(--border); color: var(--muted); white-space: nowrap; }
+  .history-type.auto { border-color: var(--yellow); color: var(--yellow); }
+  .history-desc { flex: 1; color: var(--text); font-size: 0.72rem; }
+  .history-price { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--green); font-size: 0.78rem; white-space: nowrap; }
+  .history-alert-badge { font-size: 0.56rem; color: var(--accent2); margin-left: 4px; }
+
+  .empty-state { text-align: center; padding: 40px 24px; color: var(--muted); }
+  .empty-state .icon { font-size: 2.4rem; margin-bottom: 10px; }
+  .empty-state p { font-size: 0.76rem; line-height: 1.7; }
+
+  .error-box { background: rgba(255,64,87,0.07); border: 1px solid var(--danger); border-radius: 8px; padding: 14px; margin: 14px 24px; font-size: 0.73rem; color: var(--danger); display: none; }
+  .error-box.visible { display: block; }
+
+  /* ── API KEY BANNER ── */
+  .api-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(180,142,255,0.06);
+    border: 1px solid rgba(180,142,255,0.3);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .api-banner .api-icon { font-size: 1.4rem; flex-shrink: 0; }
+
+  .api-banner .api-info { flex: 1; min-width: 180px; }
+  .api-banner .api-info .api-title {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--purple);
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .api-banner .api-info .api-sub {
+    font-size: 0.68rem;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+  .api-banner .api-info .api-sub a { color: var(--accent); text-decoration: none; }
+  .api-banner .api-info .api-sub a:hover { text-decoration: underline; }
+
+  .api-key-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 2;
+    min-width: 260px;
+  }
+
+  .api-key-field input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid rgba(180,142,255,0.4);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    padding: 9px 14px;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s;
+    letter-spacing: 0.04em;
+  }
+
+  .api-key-field input:focus { border-color: var(--purple); }
+  .api-key-field input::placeholder { color: var(--muted); letter-spacing: 0; }
+
+  .api-key-field .save-btn {
+    background: var(--purple);
+    color: #000;
+    border: none;
+    border-radius: 7px;
+    padding: 9px 16px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .api-key-field .save-btn:hover { background: #c9aaff; transform: translateY(-1px); }
+
+  .api-status {
+    font-size: 0.65rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .api-status.set { border-color: var(--green); color: var(--green); background: rgba(0,255,157,0.06); }
+  .api-status.missing { border-color: var(--danger); color: var(--danger); background: rgba(255,64,87,0.06); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-top">
+      <div class="logo-area">
+        <h1>Miami<span>Bus</span>Watch</h1>
+        <p>15-seat minibus hire · Aug 16–30 · Miami Beach area</p>
+      </div>
+      <div class="status-pill">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Ready</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- API KEY BANNER -->
+  <div class="api-banner">
+    <div class="api-icon">🔑</div>
+    <div class="api-info">
+      <div class="api-title">Anthropic API Key Required</div>
+      <div class="api-sub">
+        Your key is stored in memory only — never saved or sent anywhere except Anthropic's API.<br>
+        Get a key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+      </div>
+    </div>
+    <div class="api-key-field">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" oninput="onApiKeyInput()" />
+      <button class="save-btn" onclick="saveApiKey()">Save</button>
+    </div>
+    <div class="api-status missing" id="apiStatus">Not set</div>
+  </div>
+
+  <!-- BOOKING SUMMARY BANNER -->
+  <div class="booking-banner">
+    <div class="bk-cell">
+      <div class="bk-label">Pickup Date</div>
+      <div class="bk-value accent">Sun 16 Aug</div>
+      <div class="bk-sub">2026</div>
+    </div>
+    <div class="bk-cell">
+      <div class="bk-label">Return Date</div>
+      <div class="bk-value accent">Sun 30 Aug</div>
+      <div class="bk-sub">2026</div>
+    </div>
+    <div class="bk-cell">
+      <div class="bk-label">Duration</div>
+      <div class="bk-value yellow">14 Days</div>
+      <div class="bk-sub">2 full weeks</div>
+    </div>
+    <div class="bk-cell">
+      <div class="bk-label">Pickup Zone</div>
+      <div class="bk-value purple">Miami Beach</div>
+      <div class="bk-sub">≤10 mile radius</div>
+    </div>
+  </div>
+
+  <!-- SEARCH CONFIG -->
+  <div class="panel">
+    <div class="panel-label">// Vehicle &amp; Hire Options</div>
+    <div class="options-grid">
+      <div class="field-group">
+        <label>Vehicle Type</label>
+        <select id="vehicleType">
+          <option value="15-seat minibus">15-seat minibus (self-drive)</option>
+          <option value="15-seat minibus with driver">15-seat minibus with driver</option>
+          <option value="15-passenger van">15-passenger van (self-drive)</option>
+          <option value="minibus charter service">Minibus charter / shuttle service</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Pricing View</label>
+        <select id="hireDuration">
+          <option value="total for 14 days">Total for 14 days</option>
+          <option value="per day" selected>Per day rate</option>
+          <option value="per week">Per week rate</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="pickup-label">// Preferred Pickup Locations (within 10 miles of Miami Beach)</div>
+    <div class="pickup-grid" id="pickupGrid"></div>
+
+    <div class="panel-label" style="margin-bottom:10px">// Additional Search Preferences</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
+      <div class="field-group">
+        <label>Max Budget (per day)</label>
+        <input type="number" id="maxBudget" placeholder="e.g. 400" min="0" />
+      </div>
+      <div class="field-group">
+        <label>Insurance Included</label>
+        <select id="insurancePref">
+          <option value="any">Any (show all)</option>
+          <option value="required">Required / preferred</option>
+          <option value="not needed">Not required</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Driver Age</label>
+        <select id="driverAge">
+          <option value="any age">Any age</option>
+          <option value="21+" selected>21+ years</option>
+          <option value="25+">25+ years</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="searchBtn" onclick="runSearch(false)">
+        <div class="spinner"></div>
+        <span class="btn-label">⚡ Search &amp; Analyse Prices</span>
+      </button>
+      <button class="btn btn-timer" id="timerBtn" onclick="toggleTimer()">
+        <span id="timerBtnLabel">⏱ Auto-Refresh: OFF</span>
+      </button>
+      <button class="btn btn-stop" id="stopBtn" onclick="stopTimer()" style="display:none">
+        ⏹ Stop
+      </button>
+    </div>
+  </div>
+
+  <!-- TIMER STRIP -->
+  <div class="timer-strip" id="timerStrip">
+    <div class="timer-icon">⏱</div>
+    <div class="timer-info">
+      <div class="tl">Auto-Refresh Active — Every 6 Hours</div>
+      <div class="td" id="timerDesc">Calculating...</div>
+    </div>
+    <div class="countdown-ring">
+      <svg width="54" height="54" viewBox="0 0 54 54">
+        <circle class="track" cx="27" cy="27" r="22"/>
+        <circle class="progress" id="ringProgress" cx="27" cy="27" r="22"
+          stroke-dasharray="138.2" stroke-dashoffset="0"/>
+      </svg>
+      <div class="num" id="ringNum">6h</div>
+    </div>
+  </div>
+
+  <!-- EMAIL ALERTS -->
+  <div class="panel">
+    <div class="email-toggle" onclick="toggleEmail()">
+      <div class="toggle-label"><span>🔔</span> // Email Alerts</div>
+      <div class="toggle-switch" id="emailToggle"></div>
+    </div>
+
+    <div class="email-body" id="emailBody">
+      <div class="email-grid">
+        <div class="field-group">
+          <label>Your Email Address</label>
+          <input type="email" id="alertEmail" placeholder="you@example.com" />
+        </div>
+        <div class="field-group">
+          <label>Send Alert When</label>
+          <select id="alertFreq" onchange="onFreqChange()">
+            <option value="every">Every search result</option>
+            <option value="drop" selected>Price drops detected</option>
+            <option value="threshold">Below price threshold</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="threshold-row" id="thresholdRow">
+        <span>Alert when best daily price drops below</span>
+        <input type="number" id="priceThreshold" value="300" min="1" />
+        <span>$ per day</span>
+      </div>
+
+      <div class="panel-label" style="margin-bottom:10px">// Trigger Conditions</div>
+      <div class="cond-grid">
+        <label class="alert-condition checked" id="cond-newlow">
+          <input type="checkbox" checked onchange="syncCond(this,'newlow')"> New lowest price found
+        </label>
+        <label class="alert-condition checked" id="cond-drop10">
+          <input type="checkbox" checked onchange="syncCond(this,'drop10')"> Price drops &gt;10%
+        </label>
+        <label class="alert-condition" id="cond-newprovider">
+          <input type="checkbox" onchange="syncCond(this,'newprovider')"> New provider found
+        </label>
+        <label class="alert-condition" id="cond-everyrun">
+          <input type="checkbox" onchange="syncCond(this,'everyrun')"> Full report every refresh
+        </label>
+      </div>
+
+      <div class="email-note">
+        <strong>📧 How alerts work:</strong> When a trigger fires, a pre-filled email opens in your default mail app (Gmail, Outlook, Apple Mail) — no accounts needed, nothing leaves your browser. Just hit <strong>Send</strong> in your mail app.<br><br>
+        <strong>Keep this tab open and active</strong> for the timer and alerts to run continuously.
+      </div>
+
+      <button class="mailto-btn" onclick="sendTestEmail()">📨 Send Test Alert</button>
+    </div>
+  </div>
+
+  <!-- DAILY SUMMARY -->
+  <div class="panel">
+    <div class="email-toggle" onclick="toggleDailySummary()">
+      <div class="toggle-label"><span>📅</span> // Daily Summary Email</div>
+      <div class="toggle-switch" id="dailyToggle"></div>
+    </div>
+
+    <div class="email-body" id="dailyBody">
+      <div class="email-grid">
+        <div class="field-group">
+          <label>Send Summary To</label>
+          <input type="email" id="dailyEmail" placeholder="you@example.com" />
+        </div>
+        <div class="field-group">
+          <label>Send Time (your local time)</label>
+          <input type="time" id="dailyTime" value="08:00" />
+        </div>
+      </div>
+
+      <div class="daily-countdown-strip" id="dailyCountdownStrip">
+        <div class="timer-icon">📅</div>
+        <div class="timer-info">
+          <div class="tl">Daily Summary Scheduled</div>
+          <div class="td" id="dailyCountdownDesc">Activate toggle above to schedule</div>
+        </div>
+        <div class="countdown-ring">
+          <svg width="54" height="54" viewBox="0 0 54 54">
+            <circle class="track" cx="27" cy="27" r="22"/>
+            <circle class="progress daily-ring-prog" id="dailyRingProgress" cx="27" cy="27" r="22"
+              stroke-dasharray="138.2" stroke-dashoffset="0"/>
+          </svg>
+          <div class="num" id="dailyRingNum">—</div>
+        </div>
+      </div>
+
+      <div class="panel-label" style="margin-bottom:10px">// Summary Contents</div>
+      <div class="cond-grid">
+        <label class="alert-condition checked" id="ds-best">
+          <input type="checkbox" checked onchange="syncCond(this,'ds-best')"> Best deal of the day
+        </label>
+        <label class="alert-condition checked" id="ds-all">
+          <input type="checkbox" checked onchange="syncCond(this,'ds-all')"> All providers &amp; prices
+        </label>
+        <label class="alert-condition checked" id="ds-trend">
+          <input type="checkbox" checked onchange="syncCond(this,'ds-trend')"> Price trend vs yesterday
+        </label>
+        <label class="alert-condition checked" id="ds-rec">
+          <input type="checkbox" checked onchange="syncCond(this,'ds-rec')"> Booking recommendations
+        </label>
+      </div>
+
+      <div class="email-note">
+        <strong>📅 How daily summaries work:</strong> Each day at your chosen time, a full price report opens as a pre-filled email draft in your mail app — just hit Send.<br><br>
+        The digest includes the best deal found, all providers, price movement vs the previous day, and booking tips.<br><br>
+        <strong>Keep this tab open</strong> for the scheduled send to fire automatically.
+      </div>
+
+      <div class="btn-row" style="margin-top:16px;gap:10px">
+        <button class="mailto-btn" onclick="sendDailySummaryNow()">📨 Send Today's Summary Now</button>
+        <button class="mailto-btn" style="background:var(--surface2);color:var(--muted);border:1px solid var(--border);margin-top:0" onclick="previewDailySummary()">👁 Preview</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAILY SUMMARY PREVIEW MODAL -->
+  <div id="previewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:900;align-items:center;justify-content:center;padding:20px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;max-width:640px;width:100%;max-height:80vh;overflow-y:auto;padding:28px;position:relative">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;color:var(--accent)">📅 Daily Summary Preview</span>
+        <span onclick="closePreview()" style="cursor:pointer;color:var(--muted);font-size:1.2rem">✕</span>
+      </div>
+      <pre id="previewContent" style="font-family:'DM Mono',monospace;font-size:0.72rem;line-height:1.8;color:var(--text);white-space:pre-wrap;word-break:break-word"></pre>
+      <div style="margin-top:18px;display:flex;gap:10px">
+        <button class="mailto-btn" onclick="sendDailySummaryNow();closePreview()">📨 Send This Now</button>
+        <button class="mailto-btn" style="background:var(--surface2);color:var(--muted);border:1px solid var(--border);margin-top:0" onclick="closePreview()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-panel" id="resultsPanel">
+    <div class="results-header">
+      <span class="results-title">// Live Price Intelligence · Aug 16–30 · Miami Beach</span>
+      <span class="timestamp" id="resultTimestamp"></span>
+    </div>
+    <div class="stream-area" id="streamArea">
+      <div class="thinking-label">Agent Thinking</div>
+      <div id="streamText"></div>
+    </div>
+    <div class="error-box" id="errorBox"></div>
+    <div class="price-results" id="priceResults"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="history-panel">
+    <div class="panel-label">// Search History</div>
+    <div id="historyLog">
+      <div class="empty-state">
+        <div class="icon">🚌</div>
+        <p>No searches yet.<br>Select your preferred pickup location(s) above, then hit Search.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="alert-toast" id="alertToast">
+  <span class="t-close" onclick="closeToast()">✕</span>
+  <div class="t-title" id="toastTitle">Alert</div>
+  <div class="t-body" id="toastBody"></div>
+</div>
+
+<script>
+// ─── FIXED BOOKING PARAMS ────────────────────────────────────────────────────
+const PICKUP_DATE  = 'Sunday 16 August 2026';
+const RETURN_DATE  = 'Sunday 30 August 2026';
+const DURATION     = '14 days (2 full weeks)';
+const HIRE_ZONE    = 'Miami Beach, Florida and within a 10-mile radius';
+
+// ─── API KEY ─────────────────────────────────────────────────────────────────
+let apiKey = '';
+
+function onApiKeyInput() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  const status = document.getElementById('apiStatus');
+  if (val.startsWith('sk-ant-') && val.length > 20) {
+    status.textContent = 'Ready ✓';
+    status.className = 'api-status set';
+  } else if (val.length > 0) {
+    status.textContent = 'Invalid key';
+    status.className = 'api-status missing';
+  } else {
+    status.textContent = 'Not set';
+    status.className = 'api-status missing';
+  }
+}
+
+function saveApiKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  if (!val.startsWith('sk-ant-') || val.length < 20) {
+    showToast('⚠️ Invalid Key', 'API keys should start with sk-ant- — check and try again.');
+    return;
+  }
+  apiKey = val;
+  // Mask the displayed key after saving
+  document.getElementById('apiKeyInput').value = val.slice(0, 14) + '••••••••••••' + val.slice(-4);
+  document.getElementById('apiKeyInput').type = 'text';
+  document.getElementById('apiStatus').textContent = 'Active ✓';
+  document.getElementById('apiStatus').className = 'api-status set';
+  showToast('🔑 API Key Saved', 'Key stored in memory for this session. Run a search to begin.');
+}
+
+// Pickup location options within ~10 miles of Miami Beach
+const PICKUP_LOCATIONS = [
+  { id: 'mb-central',  icon: '🏖️', name: 'Miami Beach (Central)',   area: 'Collins Ave / Ocean Dr',      dist: '0 mi' },
+  { id: 'mb-north',    icon: '🌴', name: 'North Miami Beach',        area: 'Aventura / Hallandale area',  dist: '~7 mi N' },
+  { id: 'miami-int',   icon: '✈️', name: 'Miami Int\'l Airport',     area: 'MIA — NW 21st St',            dist: '~8 mi W' },
+  { id: 'downtown',    icon: '🏙️', name: 'Downtown Miami',           area: 'Brickell / Bayside area',     dist: '~4 mi W' },
+  { id: 'coral-gables',icon: '🌺', name: 'Coral Gables / Coconut Grove', area: 'Miracle Mile area',      dist: '~7 mi SW' },
+  { id: 'wynwood',     icon: '🎨', name: 'Wynwood / Midtown',         area: 'NW 2nd Ave corridor',         dist: '~5 mi W' },
+  { id: 'miami-beach-south', icon: '🌊', name: 'South Beach (SoBe)', area: 'Ocean Dr / Lincoln Rd',       dist: '~1 mi S' },
+  { id: 'hialeah',     icon: '🏢', name: 'Hialeah',                  area: 'W 49th St area',              dist: '~9 mi NW' },
+];
+
+const selectedPickups = new Set(['mb-central', 'miami-int', 'downtown']);
+
+function renderPickups() {
+  const grid = document.getElementById('pickupGrid');
+  grid.innerHTML = PICKUP_LOCATIONS.map(loc => {
+    const sel = selectedPickups.has(loc.id);
+    return `<div class="pickup-chip ${sel?'selected':''}" onclick="togglePickup('${loc.id}',this)">
+      <span class="chip-icon">${loc.icon}</span>
+      <div class="chip-info">
+        <div class="chip-name">${loc.name}</div>
+        <div class="chip-dist">${loc.area} · ${loc.dist}</div>
+      </div>
+      <span class="chip-check">✓</span>
+    </div>`;
+  }).join('');
+}
+
+function togglePickup(id, el) {
+  if (selectedPickups.has(id)) { selectedPickups.delete(id); el.classList.remove('selected'); }
+  else { selectedPickups.add(id); el.classList.add('selected'); }
+}
+
+renderPickups();
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let timerActive      = false;
+let timerInterval    = null;
+let nextSearchTO     = null;
+let timerRemainingMs = 0;
+let emailEnabled     = false;
+let lastBestPriceNum = null;
+let knownProviders   = new Set();
+
+const INTERVAL_MS   = 6 * 60 * 60 * 1000;
+const CIRCUMFERENCE = 2 * Math.PI * 22;
+
+// ─── TIMER ───────────────────────────────────────────────────────────────────
+function toggleTimer() { timerActive ? stopTimer() : startTimer(); }
+
+function startTimer() {
+  timerActive = true;
+  timerRemainingMs = INTERVAL_MS;
+
+  document.getElementById('timerBtnLabel').textContent = '⏱ Auto-Refresh: ON';
+  document.getElementById('timerBtn').classList.add('active');
+  document.getElementById('stopBtn').style.display = 'flex';
+  document.getElementById('timerStrip').classList.add('visible');
+  document.getElementById('statusDot').className = 'status-dot timer-on';
+  document.getElementById('statusText').textContent = 'Timer On';
+
+  tickCountdown();
+  timerInterval = setInterval(tickCountdown, 1000);
+  nextSearchTO = setTimeout(() => runSearch(true), INTERVAL_MS);
+  showToast('⏱ Auto-Refresh Started', 'Prices will be re-checked every 6 hours. Keep this tab open.');
+}
+
+function stopTimer() {
+  timerActive = false;
+  clearInterval(timerInterval);
+  clearTimeout(nextSearchTO);
+  timerInterval = null; nextSearchTO = null;
+
+  document.getElementById('timerBtnLabel').textContent = '⏱ Auto-Refresh: OFF';
+  document.getElementById('timerBtn').classList.remove('active');
+  document.getElementById('stopBtn').style.display = 'none';
+  document.getElementById('timerStrip').classList.remove('visible');
+  document.getElementById('statusDot').className = 'status-dot';
+  document.getElementById('statusText').textContent = 'Ready';
+}
+
+function rescheduleTimer() {
+  clearInterval(timerInterval); clearTimeout(nextSearchTO);
+  timerRemainingMs = INTERVAL_MS;
+  timerInterval = setInterval(tickCountdown, 1000);
+  nextSearchTO = setTimeout(() => runSearch(true), INTERVAL_MS);
+}
+
+function tickCountdown() {
+  if (timerRemainingMs < 0) timerRemainingMs = 0;
+  const totalSec = INTERVAL_MS / 1000;
+  const remSec   = Math.round(timerRemainingMs / 1000);
+  const progress = (totalSec - remSec) / totalSec;
+  const offset   = CIRCUMFERENCE * (1 - progress);
+
+  document.getElementById('ringProgress').style.strokeDashoffset = offset;
+  const h = Math.floor(remSec / 3600);
+  const m = Math.floor((remSec % 3600) / 60);
+  document.getElementById('ringNum').textContent = h > 0 ? `${h}h` : `${m}m`;
+
+  const nextTime = new Date(Date.now() + timerRemainingMs);
+  document.getElementById('timerDesc').textContent =
+    `Next search at ${nextTime.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} — runs every 6 hours`;
+  timerRemainingMs -= 1000;
+}
+
+// ─── EMAIL UI ────────────────────────────────────────────────────────────────
+function toggleEmail() {
+  emailEnabled = !emailEnabled;
+  document.getElementById('emailToggle').classList.toggle('on', emailEnabled);
+  document.getElementById('emailBody').classList.toggle('open', emailEnabled);
+}
+
+function onFreqChange() {
+  document.getElementById('thresholdRow').style.display =
+    document.getElementById('alertFreq').value === 'threshold' ? 'flex' : 'none';
+}
+
+function syncCond(cb, id) {
+  document.getElementById('cond-' + id).classList.toggle('checked', cb.checked);
+}
+
+// ─── EMAIL DISPATCH ───────────────────────────────────────────────────────────
+function buildEmailBody(data, pickupNames, vehicleType, isAuto, alertReason) {
+  const best = data.providers?.find(p => p.bestDeal) || data.providers?.[0];
+  const provList = (data.providers || []).map(p =>
+    `• ${p.name}: ${p.price} ${p.priceNote||''}\n  Type: ${p.type||'N/A'}\n  Location: ${p.pickupLocation||'N/A'}\n  Details: ${p.details||''}`
+  ).join('\n\n');
+
+  return `MiamiBusWatch Price Report
+${isAuto ? '[AUTO-REFRESH]' : '[MANUAL SEARCH]'} · ${new Date().toLocaleString()}
+
+─────────────────────────────────
+BOOKING DETAILS
+─────────────────────────────────
+Vehicle  : ${vehicleType}
+Pickup   : ${PICKUP_DATE}
+Return   : ${RETURN_DATE}
+Duration : ${DURATION}
+Zone     : ${HIRE_ZONE}
+Locations searched: ${pickupNames}
+${alertReason ? '\n⚠️  ALERT: ' + alertReason + '\n' : ''}
+─────────────────────────────────
+BEST DEAL
+─────────────────────────────────
+${best ? best.name + ' at ' + best.price + ' ' + (best.priceNote||'') + '\n' + (best.details||'') : 'N/A'}
+
+─────────────────────────────────
+ALL PROVIDERS
+─────────────────────────────────
+${provList}
+
+─────────────────────────────────
+MARKET SUMMARY
+─────────────────────────────────
+${data.summary || 'N/A'}
+
+RECOMMENDATIONS:
+${data.recommendations || 'N/A'}
+
+---
+MiamiBusWatch · Running in your browser · ${new Date().toLocaleString()}`;
+}
+
+function triggerEmail(data, pickupNames, vehicleType, isAuto, alertReason) {
+  const addr = document.getElementById('alertEmail').value.trim();
+  if (!addr) return;
+  const subj = encodeURIComponent(
+    alertReason
+      ? `🚨 MiamiBusWatch Alert: ${alertReason} — Aug 16–30 Miami Beach`
+      : `🚐 MiamiBusWatch Report · Aug 16–30 · ${new Date().toLocaleDateString()}`
+  );
+  const body = encodeURIComponent(buildEmailBody(data, pickupNames, vehicleType, isAuto, alertReason));
+  window.location.href = `mailto:${addr}?subject=${subj}&body=${body}`;
+}
+
+function sendTestEmail() {
+  const addr = document.getElementById('alertEmail').value.trim();
+  if (!addr) { alert('Please enter your email address first.'); return; }
+  const subj = encodeURIComponent('✅ MiamiBusWatch · Test Alert — Aug 16–30 Miami Beach');
+  const body = encodeURIComponent(
+    `This is a test alert from MiamiBusWatch.\n\nYour booking details:\n• Pickup: ${PICKUP_DATE}\n• Return: ${RETURN_DATE}\n• Duration: ${DURATION}\n• Zone: ${HIRE_ZONE}\n\nEmail alerts are configured correctly. Keep this tab open and prices will be checked every 6 hours.\n\n---\nMiamiBusWatch · ${new Date().toLocaleString()}`
+  );
+  window.location.href = `mailto:${addr}?subject=${subj}&body=${body}`;
+}
+
+// ─── DAILY SUMMARY ───────────────────────────────────────────────────────────
+let dailyEnabled       = false;
+let dailyCheckInterval = null;   // polls every minute to check if it's send time
+let lastDailySentDate  = null;   // 'YYYY-MM-DD' string — prevents double-sends
+let dailyRingInterval  = null;
+let lastSearchData     = null;   // stores latest search result for summary use
+let prevDayBestPrice   = null;   // for trend comparison
+
+function toggleDailySummary() {
+  dailyEnabled = !dailyEnabled;
+  document.getElementById('dailyToggle').classList.toggle('on', dailyEnabled);
+  document.getElementById('dailyBody').classList.toggle('open', dailyEnabled);
+
+  if (dailyEnabled) {
+    startDailyScheduler();
+    showToast('📅 Daily Summary On', `Will send every day at ${document.getElementById('dailyTime').value}`);
+  } else {
+    stopDailyScheduler();
+  }
+}
+
+function startDailyScheduler() {
+  stopDailyScheduler();
+  updateDailyCountdown();
+  dailyCheckInterval = setInterval(checkDailySendTime, 30000); // check every 30s
+  dailyRingInterval  = setInterval(updateDailyCountdown, 10000); // update ring every 10s
+}
+
+function stopDailyScheduler() {
+  clearInterval(dailyCheckInterval);
+  clearInterval(dailyRingInterval);
+  dailyCheckInterval = null;
+  dailyRingInterval  = null;
+  document.getElementById('dailyCountdownDesc').textContent = 'Activate toggle above to schedule';
+  document.getElementById('dailyRingNum').textContent = '—';
+  document.getElementById('dailyRingProgress').style.strokeDashoffset = 0;
+}
+
+function checkDailySendTime() {
+  if (!dailyEnabled) return;
+  const addr = document.getElementById('dailyEmail').value.trim();
+  if (!addr) return;
+
+  const now       = new Date();
+  const timeVal   = document.getElementById('dailyTime').value; // "HH:MM"
+  const [hh, mm]  = timeVal.split(':').map(Number);
+  const todayStr  = now.toISOString().slice(0, 10);
+
+  if (now.getHours() === hh && now.getMinutes() === mm && lastDailySentDate !== todayStr) {
+    lastDailySentDate = todayStr;
+    sendDailySummaryNow();
+    showToast('📅 Daily Summary Sent', `Your ${timeVal} daily digest has been dispatched.`);
+  }
+}
+
+function updateDailyCountdown() {
+  if (!dailyEnabled) return;
+  const now      = new Date();
+  const timeVal  = document.getElementById('dailyTime').value;
+  const [hh, mm] = timeVal.split(':').map(Number);
+
+  const next = new Date(now);
+  next.setHours(hh, mm, 0, 0);
+  if (next <= now) next.setDate(next.getDate() + 1); // push to tomorrow
+
+  const msUntil   = next - now;
+  const totalMs   = 24 * 60 * 60 * 1000;
+  const progress  = 1 - (msUntil / totalMs);
+  const offset    = 138.2 * (1 - progress);
+
+  document.getElementById('dailyRingProgress').style.strokeDashoffset = offset;
+
+  const hLeft = Math.floor(msUntil / 3600000);
+  const mLeft = Math.floor((msUntil % 3600000) / 60000);
+  document.getElementById('dailyRingNum').textContent = hLeft > 0 ? `${hLeft}h` : `${mLeft}m`;
+
+  const nextStr = next.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  const dayStr  = next.toDateString() === now.toDateString() ? 'today' : 'tomorrow';
+  document.getElementById('dailyCountdownDesc').textContent =
+    `Next summary sends ${dayStr} at ${nextStr}`;
+}
+
+function buildDailySummaryBody() {
+  const vehicleType = document.getElementById('vehicleType').value;
+  const chosenPickups = PICKUP_LOCATIONS.filter(l => selectedPickups.has(l.id));
+  const pickupNames   = chosenPickups.map(l => l.name).join(', ') || 'Miami Beach area';
+  const data          = lastSearchData;
+  const today         = new Date().toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+  const incBest  = document.getElementById('ds-best').querySelector('input').checked;
+  const incAll   = document.getElementById('ds-all').querySelector('input').checked;
+  const incTrend = document.getElementById('ds-trend').querySelector('input').checked;
+  const incRec   = document.getElementById('ds-rec').querySelector('input').checked;
+
+  let body = `MiamiBusWatch · DAILY SUMMARY
+${today}
+
+─────────────────────────────────
+BOOKING DETAILS
+─────────────────────────────────
+Vehicle  : ${vehicleType}
+Pickup   : ${PICKUP_DATE}
+Return   : ${RETURN_DATE}
+Duration : ${DURATION}
+Zone     : ${HIRE_ZONE}
+Locations: ${pickupNames}
+`;
+
+  if (!data) {
+    body += `\n⚠️  No search data available yet.\nRun a search first, then the daily summary will include live pricing.\n`;
+  } else {
+    const best    = data.providers?.find(p => p.bestDeal) || data.providers?.[0];
+    const bestNum = best ? parseFloat((best.price||'').replace(/[^0-9.]/g,'')) : null;
+
+    if (incBest && best) {
+      body += `
+─────────────────────────────────
+⭐ BEST DEAL TODAY
+─────────────────────────────────
+${best.name}: ${best.price} ${best.priceNote||''}
+Type: ${best.type||'N/A'}
+Location: ${best.pickupLocation||'N/A'}
+${best.details||''}
+`;
+    }
+
+    if (incTrend) {
+      body += `\n─────────────────────────────────\n📈 PRICE TREND\n─────────────────────────────────\n`;
+      if (prevDayBestPrice && bestNum) {
+        const diff = bestNum - prevDayBestPrice;
+        const pct  = ((diff / prevDayBestPrice) * 100).toFixed(1);
+        const arrow = diff < 0 ? '↓ DOWN' : diff > 0 ? '↑ UP' : '→ UNCHANGED';
+        body += `Best price vs yesterday: ${arrow} ${Math.abs(pct)}%\nYesterday: $${prevDayBestPrice.toFixed(0)} → Today: ${best?.price||'N/A'}\n`;
+      } else {
+        body += `No previous day data to compare yet.\n`;
+      }
+    }
+
+    if (incAll && data.providers?.length) {
+      body += `\n─────────────────────────────────\n🚐 ALL PROVIDERS\n─────────────────────────────────\n`;
+      data.providers.forEach((p, i) => {
+        body += `${i+1}. ${p.name}: ${p.price} ${p.priceNote||''}\n   ${p.type||''} · ${p.pickupLocation||''}\n   ${p.details||''}\n\n`;
+      });
+    }
+
+    if (incRec && data.recommendations) {
+      body += `─────────────────────────────────\n💡 RECOMMENDATIONS\n─────────────────────────────────\n${data.recommendations}\n`;
+    }
+
+    if (data.summary) {
+      body += `\n─────────────────────────────────\nMARKET SUMMARY\n─────────────────────────────────\n${data.summary}\n`;
+    }
+
+    // Store today's best as prev for tomorrow's trend
+    if (bestNum) prevDayBestPrice = bestNum;
+  }
+
+  body += `\n---\nMiamiBusWatch Daily Digest · ${new Date().toLocaleString()}\nKeep your browser tab open to continue receiving daily summaries.`;
+  return body;
+}
+
+function sendDailySummaryNow() {
+  const addr = document.getElementById('dailyEmail').value.trim();
+  if (!addr) {
+    alert('Please enter your email address in the Daily Summary panel first.');
+    // Auto-open the panel if not open
+    if (!dailyEnabled) toggleDailySummary();
+    document.getElementById('dailyEmail').focus();
+    return;
+  }
+  const today    = new Date().toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+  const hasData  = !!lastSearchData;
+  const best     = lastSearchData?.providers?.find(p => p.bestDeal) || lastSearchData?.providers?.[0];
+  const bestStr  = best?.price || 'No data yet';
+
+  const subj = encodeURIComponent(`📅 MiamiBusWatch Daily Summary · ${today} · Best: ${bestStr}`);
+  const body = encodeURIComponent(buildDailySummaryBody());
+  window.location.href = `mailto:${addr}?subject=${subj}&body=${body}`;
+}
+
+function previewDailySummary() {
+  document.getElementById('previewContent').textContent = buildDailySummaryBody();
+  document.getElementById('previewModal').classList.add('open');
+}
+
+function closePreview() {
+  document.getElementById('previewModal').classList.remove('open');
+}
+
+// ─── MAIN SEARCH ─────────────────────────────────────────────────────────────
+async function runSearch(isAutoRefresh) {
+  const btn         = document.getElementById('searchBtn');
+  const vehicleType = document.getElementById('vehicleType').value;
+  const hireDuration = document.getElementById('hireDuration').value;
+  const maxBudget   = document.getElementById('maxBudget').value;
+  const insurance   = document.getElementById('insurancePref').value;
+  const driverAge   = document.getElementById('driverAge').value;
+
+  const chosenPickups = PICKUP_LOCATIONS.filter(l => selectedPickups.has(l.id));
+  const pickupNames   = chosenPickups.map(l => l.name).join(', ') || 'anywhere within 10 miles of Miami Beach';
+
+  btn.disabled = true;
+  btn.classList.add('loading');
+  document.getElementById('statusDot').className = 'status-dot live';
+  document.getElementById('statusText').textContent = isAutoRefresh ? 'Auto-searching...' : 'Searching...';
+
+  // Validate API key
+  if (!apiKey) {
+    document.getElementById('errorBox').textContent = '🔑 Please enter your Anthropic API key in the banner above to run searches.';
+    document.getElementById('errorBox').classList.add('visible');
+    document.getElementById('resultsPanel').classList.add('visible');
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    document.getElementById('statusDot').className = 'status-dot';
+    document.getElementById('statusText').textContent = 'Ready';
+    document.getElementById('apiKeyInput').focus();
+    return;
+  }
+
+  const resultsPanel = document.getElementById('resultsPanel');
+  const streamArea   = document.getElementById('streamArea');
+  const streamText   = document.getElementById('streamText');
+  const priceResults = document.getElementById('priceResults');
+  const errorBox     = document.getElementById('errorBox');
+
+  resultsPanel.classList.add('visible');
+  streamArea.classList.add('visible');
+  streamText.textContent = '';
+  priceResults.innerHTML = '';
+  errorBox.classList.remove('visible');
+  document.getElementById('resultTimestamp').textContent =
+    (isAutoRefresh ? '⏱ Auto · ' : '') + new Date().toLocaleTimeString();
+
+  const budgetLine = maxBudget ? `Maximum budget: $${maxBudget} per day.` : '';
+  const insuranceLine = insurance !== 'any' ? `Insurance preference: ${insurance}.` : '';
+
+  const prompt = `You are a specialist vehicle hire price research agent. Search the web thoroughly for current prices and availability for the following specific hire:
+
+BOOKING REQUIREMENTS:
+- Vehicle: ${vehicleType} (capacity: 15 passengers)
+- Pickup date: ${PICKUP_DATE}
+- Return date: ${RETURN_DATE}
+- Total duration: ${DURATION}
+- Pickup location: ${pickupNames} — all within 10 miles of Miami Beach, Florida
+- Pricing view wanted: ${hireDuration}
+- Driver age: ${driverAge}
+${budgetLine}
+${insuranceLine}
+
+SEARCH INSTRUCTIONS:
+1. Search for minibus rental companies, passenger van hire, and charter services that operate in or deliver to the Miami Beach area (including MIA airport, Downtown Miami, Brickell, Wynwood, Coral Gables, Aventura)
+2. Look for: national chains (Enterprise, Budget, Hertz, National, Avis, Alamo), Florida specialist rental companies, Miami charter/shuttle companies, and peer-to-peer platforms
+3. Find actual listed prices or quote estimates for a 14-day hire starting 16 August 2026
+4. Note whether each company has a depot/office within 10 miles of Miami Beach, or offers delivery/pickup
+5. Check for August peak-season surcharges, mileage limits, and fuel policies
+6. Note any one-way rental options if available
+7. Look for companies that specialise in group transport or event hire in Miami
+
+Provide your findings in this EXACT JSON format (raw JSON only, no markdown):
+{
+  "summary": "2-3 sentence overview of the market specifically for 14-day hire from Miami Beach area in August 2026, noting peak season factors",
+  "providers": [
+    {
+      "name": "Company Name",
+      "emoji": "single relevant emoji",
+      "price": "$X,XXX",
+      "priceNote": "total 14 days / per day / per week",
+      "type": "Self-drive OR With Driver/Chauffeur",
+      "pickupLocation": "Nearest depot or delivery area to Miami Beach",
+      "distFromMB": "X miles from Miami Beach",
+      "details": "Key details: what is included, mileage policy, fuel, insurance, booking URL or phone",
+      "tags": ["tag1", "tag2", "tag3"],
+      "tagStyles": ["green", "blue", "orange", "purple"],
+      "bestDeal": false,
+      "nearMiamiBch": true
+    }
+  ],
+  "recommendations": "Specific actionable advice for booking this 14-day hire for Aug 16–30 from Miami Beach area, including best time to book and any peak season tips"
+}
+
+Set bestDeal: true for the best overall value. Set nearMiamiBch: true if they have a pickup point within 10 miles of Miami Beach.
+Tags examples: "Airport Pickup", "Beach Delivery", "Unlimited Miles", "Includes Driver", "Peak Season Rate", "Instant Book", "14-day Discount", "Free Cancellation".
+Tag styles: green=best feature, blue=location/availability, orange=important note, purple=premium feature.
+Aim for 5-8 providers. Always give realistic price estimates if exact quotes unavailable, labelled as estimates.`;
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4000,
+        tools: [{ "type": "web_search_20250305", "name": "web_search" }],
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message || 'API error');
+
+    let thinkingLog = '';
+    let finalText   = '';
+
+    for (const block of data.content) {
+      if (block.type === 'tool_use' && block.name === 'web_search') {
+        thinkingLog += `🔍 Searching: "${block.input?.query}"\n`;
+        streamText.textContent = thinkingLog;
+      }
+      if (block.type === 'text') finalText = block.text;
+    }
+
+    let parsed;
+    try {
+      const cleaned   = finalText.replace(/```json|```/g, '').trim();
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
+      else throw new Error('No JSON found');
+    } catch {
+      parsed = { summary: finalText.substring(0, 700), providers: [], recommendations: '' };
+    }
+
+    streamArea.classList.remove('visible');
+    renderResults(parsed, hireDuration);
+    lastSearchData = parsed; // store for daily summary
+
+    // ── Alert logic ──
+    const best        = parsed.providers?.find(p => p.bestDeal) || parsed.providers?.[0];
+    const bestStr     = best?.price || '';
+    const bestNum     = parseFloat(bestStr.replace(/[^0-9.]/g, ''));
+    const freq        = document.getElementById('alertFreq').value;
+    const condNewlow  = document.getElementById('cond-newlow').querySelector('input').checked;
+    const condDrop10  = document.getElementById('cond-drop10').querySelector('input').checked;
+    const condNewProv = document.getElementById('cond-newprovider').querySelector('input').checked;
+    const condEvery   = document.getElementById('cond-everyrun').querySelector('input').checked;
+    const threshold   = parseFloat(document.getElementById('priceThreshold').value);
+
+    let alertReason = '';
+    let shouldEmail = false;
+
+    if (condNewProv) {
+      const newProvs = (parsed.providers || []).filter(p => !knownProviders.has(p.name));
+      if (newProvs.length && knownProviders.size > 0) {
+        alertReason = `New provider(s): ${newProvs.map(p=>p.name).join(', ')}`;
+        shouldEmail = true;
+      }
+      (parsed.providers || []).forEach(p => knownProviders.add(p.name));
+    }
+
+    if (!isNaN(bestNum) && lastBestPriceNum !== null) {
+      const drop = ((lastBestPriceNum - bestNum) / lastBestPriceNum) * 100;
+      if (drop > 0) {
+        const msg = `Price dropped ${drop.toFixed(0)}% — was $${lastBestPriceNum.toFixed(0)}, now ${bestStr}`;
+        if (condNewlow && bestNum < lastBestPriceNum) { alertReason = alertReason || msg; shouldEmail = true; }
+        if (condDrop10 && drop >= 10) { alertReason = alertReason || msg; shouldEmail = true; }
+      }
+    }
+    if (!isNaN(bestNum)) {
+      if (freq === 'threshold' && bestNum < threshold) {
+        alertReason = alertReason || `Best price ${bestStr} is below your $${threshold} threshold`;
+        shouldEmail = true;
+      }
+      lastBestPriceNum = bestNum;
+    }
+    if (freq === 'every' || condEvery) shouldEmail = true;
+
+    if (alertReason)      showToast('📉 Price Alert', alertReason);
+    else if (isAutoRefresh) showToast('🔄 Auto-Refresh Done', `Best: ${bestStr || 'See results'}`);
+
+    if (emailEnabled && shouldEmail) {
+      triggerEmail(parsed, pickupNames, vehicleType, isAutoRefresh, alertReason);
+    }
+
+    addHistory(vehicleType, bestStr || 'N/A', !!alertReason, isAutoRefresh);
+    if (isAutoRefresh && timerActive) rescheduleTimer();
+
+  } catch (err) {
+    streamArea.classList.remove('visible');
+    errorBox.textContent = `Search error: ${err.message}. Will retry on next scheduled run.`;
+    errorBox.classList.add('visible');
+    if (isAutoRefresh && timerActive) rescheduleTimer();
+  }
+
+  btn.disabled = false;
+  btn.classList.remove('loading');
+  document.getElementById('statusDot').className = timerActive ? 'status-dot timer-on' : 'status-dot';
+  document.getElementById('statusText').textContent = timerActive ? 'Timer On' : 'Ready';
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function renderResults(data, hireDuration) {
+  const priceResults = document.getElementById('priceResults');
+  let html = '';
+
+  if (data.providers?.length) {
+    data.providers.forEach(p => {
+      const tags = (p.tags || []).map((tag, ti) =>
+        `<span class="tag ${(p.tagStyles||[])[ti]||''}">${tag}</span>`
+      ).join('');
+
+      const locLine = p.pickupLocation
+        ? `<div style="font-size:0.65rem;color:var(--purple);margin-top:3px">📍 ${p.pickupLocation}${p.distFromMB ? ' · ' + p.distFromMB : ''}</div>`
+        : '';
+
+      html += `<div class="price-card ${p.bestDeal?'best-deal':''} ${p.nearMiamiBch?'location-match':''}">
+        <div class="provider-logo">${p.emoji||'🚐'}</div>
+        <div class="provider-info">
+          <h3>${p.name}</h3>
+          <div class="details">${p.type||''} · ${p.details||''}</div>
+          ${locLine}
+          <div class="tags">${tags}</div>
+        </div>
+        <div class="price-area">
+          <div class="price ${p.bestDeal?'best':''}">${p.price||'TBD'}</div>
+          <div class="per">${p.priceNote||hireDuration}</div>
+          ${p.bestDeal?'<div class="best-badge">Best Deal</div>':''}
+        </div>
+      </div>`;
+    });
+  } else {
+    html = '<div class="empty-state"><div class="icon">🔍</div><p>No providers found yet — see summary below.</p></div>';
+  }
+
+  if (data.summary) {
+    html += `<div class="summary-box"><div class="summary-label">// Market Analysis · Aug 16–30 · Miami Beach</div>${data.summary}</div>`;
+  }
+  if (data.recommendations) {
+    html += `<div class="summary-box" style="border-left-color:var(--accent2);margin-top:12px">
+      <div class="summary-label" style="color:var(--accent2)">// Booking Recommendations</div>${data.recommendations}
+    </div>`;
+  }
+
+  priceResults.innerHTML = html;
+}
+
+// ─── HISTORY ─────────────────────────────────────────────────────────────────
+function addHistory(vehicleType, bestPrice, hasAlert, isAuto) {
+  const log   = document.getElementById('historyLog');
+  const empty = log.querySelector('.empty-state');
+  if (empty) empty.remove();
+
+  const entry = document.createElement('div');
+  entry.className = 'history-entry';
+  entry.innerHTML = `
+    <span class="history-time">${new Date().toLocaleTimeString()}</span>
+    <span class="history-type ${isAuto?'auto':''}">${isAuto?'AUTO':'MANUAL'}</span>
+    <span class="history-desc">${vehicleType} · Aug 16–30 · Miami Beach</span>
+    <span class="history-price">${bestPrice}${hasAlert?'<span class="history-alert-badge"> ↓alert</span>':''}</span>
+  `;
+  log.insertBefore(entry, log.firstChild);
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(title, body) {
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastBody').textContent  = body;
+  document.getElementById('alertToast').classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => document.getElementById('alertToast').classList.remove('visible'), 7000);
+}
+
+function closeToast() { document.getElementById('alertToast').classList.remove('visible'); }
+</script>
+</body>
+</html>
